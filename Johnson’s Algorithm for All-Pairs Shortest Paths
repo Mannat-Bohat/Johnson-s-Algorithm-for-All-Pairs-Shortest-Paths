@@ -1,0 +1,76 @@
+//Johnson’s Algorithm for All-Pairs Shortest Paths
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+
+using namespace std;
+
+const int INF = 1e9;
+
+bool bellmanFord(int V, const vector<vector<pair<int, int>>>& adj, vector<int>& h) {
+    h[V] = 0;
+    vector<vector<pair<int, int>>> local_adj = adj;
+    local_adj.resize(V + 1);
+    for (int i = 0; i < V; i++) local_adj[V].push_back({i, 0});
+
+    for (int i = 0; i < V; i++) {
+        for (int u = 0; u <= V; u++) {
+            for (auto& edge : local_adj[u]) {
+                int v = edge.first;
+                int w = edge.second;
+                if (h[u] != INF && h[u] + w < h[v]) h[v] = h[u] + w;
+            }
+        }
+    }
+    for (int u = 0; u <= V; u++) {
+        for (auto& edge : local_adj[u]) {
+            int v = edge.first;
+            int w = edge.second;
+            if (h[u] != INF && h[u] + w < h[v]) return false;
+        }
+    }
+    return true;
+}
+
+void dijkstra(int V, const vector<vector<pair<int, int>>>& adj, int src, const vector<int>& h) {
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+    vector<int> dist(V, INF);
+    dist[src] = 0;
+    pq.push({0, src});
+
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        pq.pop();
+
+        for (auto& edge : adj[u]) {
+            int v = edge.first;
+            int w = edge.second;
+            int reweighted = w + h[u] - h[v];
+            if (dist[u] + reweighted < dist[v]) {
+                dist[v] = dist[u] + reweighted;
+                pq.push({dist[v], v});
+            }
+        }
+    }
+    for (int i = 0; i < V; i++) {
+        if (dist[i] != INF) cout << "To " << i << ": " << dist[i] - h[src] + h[i] << " | ";
+    }
+    cout << "\n";
+}
+
+int main() {
+    int V = 3;
+    vector<vector<pair<int, int>>> adj(V);
+    adj[0].push_back({1, -2});
+    adj[1].push_back({2, -1});
+    adj[2].push_back({0, 4});
+
+    vector<int> h(V + 1, INF);
+    if (!bellmanFord(V, adj, h)) {
+        cout << "Negative cycle detected.\n";
+        return 0;
+    }
+    for (int i = 0; i < V; i++) dijkstra(V, adj, i, h);
+    return 0;
+}
